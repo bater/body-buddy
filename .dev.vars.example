@@ -1,0 +1,10 @@
+# Copy to .dev.vars (gitignored) for local AI testing with `npm run dev`.
+# Set ONE key — Mistral wins if both are set.
+
+# Mistral free tier (https://console.mistral.ai → API Keys; needs the free "Experiment" plan enabled)
+MISTRAL_API_KEY=
+# MISTRAL_MODEL=mistral-small-latest
+
+# OpenRouter (https://openrouter.ai/keys) — any model with vision support
+OPENROUTER_API_KEY=
+# OPENROUTER_MODEL=google/gemini-2.5-flash

@@ -26,6 +26,8 @@
   "observability": {
     "enabled": true
   }
-  // Secrets (set via `wrangler secret put`):
-  //   GEMINI_API_KEY
+  // Secrets (set via `wrangler secret put`, or .dev.vars locally) — set ONE:
+  //   MISTRAL_API_KEY      → uses api.mistral.ai, model MISTRAL_MODEL (default mistral-small-latest)
+  //   OPENROUTER_API_KEY   → uses openrouter.ai, model OPENROUTER_MODEL (default google/gemini-2.5-flash)
+  // Optional plain vars MISTRAL_MODEL / OPENROUTER_MODEL can go in a "vars" block here.
 }

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../env";
-import { extractInBody, GeminiError } from "../ai/gemini";
+import { extractInBody, AiError } from "../ai/llm";
 
 const inbody = new Hono<AppContext>();
 
@@ -37,7 +37,7 @@ inbody.post("/ocr", async (c) => {
     const extraction = await extractInBody(c.env, base64, file.type || "image/jpeg");
     return c.json({ photo_key: photoKey, extraction });
   } catch (e) {
-    if (e instanceof GeminiError) {
+    if (e instanceof AiError) {
       // keep the stored photo so the record can still reference it after manual entry
       return c.json({ error: e.message, photo_key: photoKey }, e.status as 429 | 502 | 503);
     }

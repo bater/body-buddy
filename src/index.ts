@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "./env";
+import { resolveProvider } from "./ai/llm";
 import food from "./routes/food";
 import workout from "./routes/workout";
 import inbody from "./routes/inbody";
@@ -31,6 +32,13 @@ app.put("/api/settings", async (c) => {
   return c.json({ ok: true });
 });
 
-app.get("/api/health", (c) => c.json({ ok: true, ai: Boolean(c.env.GEMINI_API_KEY) }));
+app.get("/api/health", (c) => {
+  const provider = resolveProvider(c.env);
+  return c.json({
+    ok: true,
+    ai: Boolean(provider),
+    ai_provider: provider ? `${provider.name} (${provider.model})` : null,
+  });
+});
 
 export default app;

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../env";
-import { parseFoodText, GeminiError, type FoodItem } from "../ai/gemini";
+import { parseFoodText, AiError, type FoodItem } from "../ai/llm";
 
 const food = new Hono<AppContext>();
 
@@ -18,7 +18,7 @@ food.post("/parse", async (c) => {
     const { items } = await parseFoodText(c.env, text.trim());
     return c.json({ items, ...totals(items) });
   } catch (e) {
-    if (e instanceof GeminiError) return c.json({ error: e.message }, e.status as 429 | 502 | 503);
+    if (e instanceof AiError) return c.json({ error: e.message }, e.status as 429 | 502 | 503);
     throw e;
   }
 });

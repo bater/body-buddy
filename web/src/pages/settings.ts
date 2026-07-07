@@ -7,7 +7,7 @@ export function renderSettings(page: HTMLElement) {
   void (async () => {
     const [settings, health, records] = await Promise.all([
       api.get<Record<string, string>>("/api/settings"),
-      api.get<{ ok: boolean; ai: boolean }>("/api/health"),
+      api.get<{ ok: boolean; ai: boolean; ai_provider: string | null }>("/api/health"),
       api.get<InBodyRecord[]>("/api/inbody?limit=1"),
     ]);
 
@@ -57,8 +57,8 @@ export function renderSettings(page: HTMLElement) {
           "p",
           { class: "small" },
           health.ai
-            ? "✓ Gemini 已連線 — 飲食 AI 解析與 InBody 照片讀取可用"
-            : "✗ 尚未設定 GEMINI_API_KEY — AI 解析停用中，仍可手動輸入。部署後執行 wrangler secret put GEMINI_API_KEY 啟用。"
+            ? `✓ AI 已連線（${health.ai_provider}）— 飲食解析與 InBody 照片讀取可用`
+            : "✗ 尚未設定 AI key — AI 解析停用中，仍可手動輸入。以 wrangler secret put 設定 MISTRAL_API_KEY 或 OPENROUTER_API_KEY 啟用。"
         )
       ),
       h(
