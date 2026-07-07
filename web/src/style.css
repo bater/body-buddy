@@ -67,6 +67,9 @@ main {
   flex-direction: column;
   gap: 12px;
 }
+/* flex/grid children may not shrink below content size — iOS date inputs
+   report a huge intrinsic width and push cards past the viewport */
+main > *, .card, .field-grid > *, .btn-row > * { min-width: 0; }
 
 .tabbar {
   position: fixed;
@@ -158,12 +161,21 @@ main {
 /* ---- forms ---- */
 input[type="text"], input[type="number"], input[type="date"], textarea, select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--paper);
   padding: 9px 11px;
   color: var(--ink);
 }
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 42px;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+body { overflow-x: hidden; }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--data); border-color: transparent; }
 textarea { min-height: 72px; resize: vertical; }
 label.field { display: block; margin-bottom: 10px; }
