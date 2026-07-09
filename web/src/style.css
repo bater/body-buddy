@@ -32,6 +32,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
+/* the page itself never scrolls sideways — wide content scrolls in its own container */
+html, body { max-width: 100%; overflow-x: clip; }
 body {
   font-family: var(--sans);
   background: var(--paper);
@@ -74,9 +76,9 @@ main > *, .card, .field-grid > *, .btn-row > * { min-width: 0; }
 .tabbar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
   max-width: 560px;
   display: flex;
   background: var(--card);
@@ -175,7 +177,6 @@ input[type="date"] {
   min-height: 42px;
 }
 input[type="date"]::-webkit-date-and-time-value { text-align: left; }
-body { overflow-x: hidden; }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--data); border-color: transparent; }
 textarea { min-height: 72px; resize: vertical; }
 label.field { display: block; margin-bottom: 10px; }
@@ -279,7 +280,8 @@ label.field > span { display: block; font-size: 12.5px; color: var(--ink-2); mar
   #toast { transition: none; }
 }
 
-table.records { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table.records { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
 table.records th {
   text-align: left; color: var(--ink-3); font-weight: 500; font-size: 11.5px;
   padding: 4px 6px 6px; border-bottom: 1px solid var(--line);

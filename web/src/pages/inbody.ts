@@ -160,6 +160,9 @@ export function renderInBody(page: HTMLElement) {
       records.length === 0
         ? h("div", { class: "empty" }, "還沒有 InBody 紀錄")
         : h(
+            "div",
+            { class: "table-scroll" },
+            h(
             "table",
             { class: "records" },
             h(
@@ -214,6 +217,7 @@ export function renderInBody(page: HTMLElement) {
                 )
               )
             )
+          )
           )
     );
   }
