@@ -22,7 +22,14 @@ app.route("/api/inbody", inbody);
 app.route("/api/dashboard", dashboard);
 
 app.get("/api/me", (c) => {
-  const me: Record<string, unknown> = { email: c.get("userEmail"), name: c.get("userName") };
+  const me: Record<string, unknown> = {
+    email: c.get("userEmail"),
+    name: c.get("userName"),
+    // Access logout only works on the team domain, not the app host
+    logout_url: c.env.ACCESS_TEAM_DOMAIN
+      ? `https://${c.env.ACCESS_TEAM_DOMAIN}/cdn-cgi/access/logout`
+      : null,
+  };
   // until ACCESS_AUD is configured, surface the aud claim from the incoming
   // Access JWT so it can be copied into wrangler.jsonc
   if (!c.env.ACCESS_AUD) {

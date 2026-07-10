@@ -9,7 +9,7 @@ export function renderSettings(page: HTMLElement) {
       api.get<Record<string, string>>("/api/settings"),
       api.get<{ ok: boolean; ai: boolean; ai_provider: string | null }>("/api/health"),
       api.get<InBodyRecord[]>("/api/inbody?limit=1"),
-      api.get<{ email: string; name: string }>("/api/me"),
+      api.get<{ email: string; name: string; logout_url: string | null }>("/api/me"),
     ]);
 
     const targetInput = h("input", {
@@ -33,11 +33,13 @@ export function renderSettings(page: HTMLElement) {
           "div",
           { class: "row", style: "display:flex;align-items:baseline;gap:8px" },
           h("span", { class: "grow", style: "flex:1" }, me.email),
-          h(
-            "a",
-            { href: "/cdn-cgi/access/logout", class: "btn small", style: "text-decoration:none" },
-            "登出"
-          )
+          me.logout_url
+            ? h(
+                "a",
+                { href: me.logout_url, class: "btn small", style: "text-decoration:none" },
+                "登出"
+              )
+            : null
         )
       ),
       h(
