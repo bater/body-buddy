@@ -23,6 +23,19 @@ food.post("/parse", async (c) => {
   }
 });
 
+food.get("/daily", async (c) => {
+  const from = c.req.query("from");
+  const to = c.req.query("to");
+  if (!from || !to) return c.json({ error: "缺少 from/to 參數" }, 400);
+  const { results } = await c.env.DB.prepare(
+    `SELECT date, ROUND(SUM(protein_g), 1) AS protein_g, SUM(calories) AS calories
+     FROM food_logs WHERE user_id = ? AND date BETWEEN ? AND ? GROUP BY date ORDER BY date`
+  )
+    .bind(c.get("userId"), from, to)
+    .all();
+  return c.json(results);
+});
+
 food.get("/", async (c) => {
   const from = c.req.query("from");
   const to = c.req.query("to") ?? from;

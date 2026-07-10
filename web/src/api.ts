@@ -51,6 +51,7 @@ export type FoodLog = {
   protein_g: number;
   calories: number | null;
 };
+export type FoodDaily = { date: string; protein_g: number; calories: number | null };
 export type Exercise = { id: number; name: string; muscle_group: string | null };
 export type WorkoutEntry = {
   id: number;

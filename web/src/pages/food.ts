@@ -1,5 +1,16 @@
-import { api, ApiError, type FoodItem, type FoodLog } from "../api";
+import { api, ApiError, type FoodDaily, type FoodItem, type FoodLog } from "../api";
 import { h, toast, todayStr, fmt } from "../ui";
+import { lineChart } from "../chart";
+
+const TREND_DAYS = 30;
+
+function daysAgoStr(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
 
 type EditorState = { items: FoodItem[]; rawText: string; editingId: number | null };
 
@@ -42,6 +53,41 @@ export function renderFood(page: HTMLElement) {
 
   const editorBox = h("div");
   const listBox = h("div", { class: "card" });
+  const trendBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
+
+  async function refreshTrend() {
+    try {
+      const daily = await api.get<FoodDaily[]>(
+        `/api/food/daily?from=${daysAgoStr(TREND_DAYS - 1)}&to=${todayStr()}`
+      );
+      const trends: { label: string; unit: string; points: { x: string; y: number }[] }[] = [
+        {
+          label: `每日蛋白質 (G，近${TREND_DAYS}天)`,
+          unit: "g",
+          points: daily.map((d) => ({ x: d.date, y: d.protein_g })),
+        },
+        {
+          label: `每日熱量 (KCAL，近${TREND_DAYS}天)`,
+          unit: "kcal",
+          points: daily
+            .filter((d) => d.calories != null)
+            .map((d) => ({ x: d.date, y: Number(d.calories) })),
+        },
+      ];
+      trendBox.replaceChildren(
+        ...trends.map((t) =>
+          h(
+            "div",
+            { class: "card" },
+            h("div", { class: "eyebrow" }, t.label),
+            lineChart(t.points, { unit: t.unit, height: 120 })
+          )
+        )
+      );
+    } catch {
+      trendBox.replaceChildren();
+    }
+  }
 
   async function doParse() {
     const text = textarea.value.trim();
@@ -167,6 +213,7 @@ export function renderFood(page: HTMLElement) {
                   textarea.value = "";
                   renderEditor();
                   void refreshList();
+                  void refreshTrend();
                 } catch (e) {
                   toast(e instanceof ApiError ? e.message : "儲存失敗");
                 }
@@ -238,6 +285,7 @@ export function renderFood(page: HTMLElement) {
                           if (!confirm("刪除這筆飲食紀錄？")) return;
                           await api.del(`/api/food/${log.id}`);
                           void refreshList();
+                          void refreshTrend();
                         },
                       },
                       "✕"
@@ -262,7 +310,8 @@ export function renderFood(page: HTMLElement) {
       h("div", { class: "btn-row", style: "margin-top:10px" }, parseBtn, manualBtn)
     ),
     editorBox,
-    listBox
+    listBox,
+    trendBox
   );
 
   // quick-add handoff from dashboard
@@ -273,4 +322,5 @@ export function renderFood(page: HTMLElement) {
     void doParse();
   }
   void refreshList();
+  void refreshTrend();
 }
