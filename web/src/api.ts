@@ -83,7 +83,7 @@ export type Dashboard = {
   calories: number;
   food_entries: number;
   protein_target_g: number;
-  last_workout: { date: string; entries: WorkoutEntry[] } | null;
+  food_daily: FoodDaily[];
   inbody_trend: Pick<
     InBodyRecord,
     "date" | "weight_kg" | "skeletal_muscle_mass_kg" | "body_fat_percent"

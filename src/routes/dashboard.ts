@@ -9,7 +9,7 @@ dashboard.get("/", async (c) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? "")) return c.json({ error: "缺少 date 參數" }, 400);
   const uid = c.get("userId");
 
-  const [protein, target, lastWorkoutDate, inbodyTrend] = await Promise.all([
+  const [protein, target, foodDaily, inbodyTrend] = await Promise.all([
     c.env.DB.prepare(
       "SELECT COALESCE(SUM(protein_g),0) AS protein_g, COALESCE(SUM(calories),0) AS calories, COUNT(*) AS entries FROM food_logs WHERE user_id = ? AND date = ?"
     )
@@ -20,9 +20,13 @@ dashboard.get("/", async (c) => {
     )
       .bind(uid)
       .first<{ value: string }>(),
-    c.env.DB.prepare("SELECT MAX(date) AS d FROM workout_entries WHERE user_id = ?")
-      .bind(uid)
-      .first<{ d: string | null }>(),
+    c.env.DB.prepare(
+      `SELECT date, ROUND(SUM(protein_g), 1) AS protein_g, SUM(calories) AS calories
+       FROM food_logs WHERE user_id = ? AND date BETWEEN date(?, '-29 days') AND ?
+       GROUP BY date ORDER BY date`
+    )
+      .bind(uid, date, date)
+      .all(),
     c.env.DB.prepare(
       `SELECT date, weight_kg, skeletal_muscle_mass_kg, body_fat_percent
        FROM inbody_records WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 12`
@@ -31,24 +35,13 @@ dashboard.get("/", async (c) => {
       .all(),
   ]);
 
-  let lastWorkout: { date: string; entries: unknown[] } | null = null;
-  if (lastWorkoutDate?.d) {
-    const { results } = await c.env.DB.prepare(
-      `SELECT w.*, e.name AS exercise_name FROM workout_entries w
-       JOIN exercises e ON e.id = w.exercise_id WHERE w.user_id = ? AND w.date = ? ORDER BY w.id`
-    )
-      .bind(uid, lastWorkoutDate.d)
-      .all();
-    lastWorkout = { date: lastWorkoutDate.d, entries: results };
-  }
-
   return c.json({
     date,
     protein_g: protein?.protein_g ?? 0,
     calories: protein?.calories ?? 0,
     food_entries: protein?.entries ?? 0,
     protein_target_g: Number(target?.value ?? 120),
-    last_workout: lastWorkout,
+    food_daily: foodDaily.results,
     inbody_trend: (inbodyTrend.results as Record<string, unknown>[]).reverse(),
   });
 });

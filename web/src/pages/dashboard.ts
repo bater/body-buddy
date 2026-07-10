@@ -62,39 +62,28 @@ export function renderDashboard(page: HTMLElement) {
       )
     );
 
-    const workoutCard = h(
-      "div",
-      { class: "card" },
-      h("div", { class: "eyebrow" }, "最近訓練"),
-      d.last_workout
-        ? h(
-            "div",
-            {},
-            h("div", { class: "muted small", style: "margin-bottom:4px" }, d.last_workout.date),
-            ...d.last_workout.entries.map((w) =>
-              h(
-                "div",
-                { class: "entry row", style: "display:flex" },
-                h("span", { class: "grow" }, w.exercise_name),
-                h("span", { class: "num" }, `${fmt(w.weight_kg)}kg × ${w.reps} × ${w.sets}`)
-              )
-            )
-          )
-        : h("div", { class: "empty" }, "還沒有訓練紀錄，到「訓練」頁開始"),
-      h("a", { href: "#/workout", class: "muted small", style: "display:block;margin-top:8px;color:var(--accent);text-decoration:none" }, "前往訓練 →")
-    );
+    const chartCard = (label: string, points: { x: string; y: number }[], unit: string, link?: HTMLElement) =>
+      h("div", { class: "card" }, h("div", { class: "eyebrow" }, label), lineChart(points, { unit, height: 120 }), link);
 
-    const weightPoints = d.inbody_trend
-      .filter((r) => r.weight_kg != null)
-      .map((r) => ({ x: r.date, y: r.weight_kg }));
-    const inbodyCard = h(
-      "div",
-      { class: "card" },
-      h("div", { class: "eyebrow" }, "體重趨勢 (KG)"),
-      lineChart(weightPoints, { unit: "kg" }),
+    const proteinCard = chartCard(
+      "每日蛋白質 (G)",
+      d.food_daily.map((f) => ({ x: f.date, y: f.protein_g })),
+      "g"
+    );
+    const muscleCard = chartCard(
+      "肌肉重 (KG)",
+      d.inbody_trend
+        .filter((r) => r.skeletal_muscle_mass_kg != null)
+        .map((r) => ({ x: r.date, y: Number(r.skeletal_muscle_mass_kg) })),
+      "kg"
+    );
+    const fatCard = chartCard(
+      "體脂率 (%)",
+      d.inbody_trend.filter((r) => r.body_fat_percent != null).map((r) => ({ x: r.date, y: Number(r.body_fat_percent) })),
+      "%",
       h("a", { href: "#/inbody", class: "muted small", style: "display:block;margin-top:8px;color:var(--accent);text-decoration:none" }, "InBody 詳細 →")
     );
 
-    page.replaceChildren(hero, workoutCard, inbodyCard);
+    page.replaceChildren(hero, proteinCard, muscleCard, fatCard);
   })();
 }
