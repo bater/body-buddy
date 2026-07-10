@@ -84,6 +84,59 @@ if (inviteToken) {
     });
 }
 
+// ---- topbar user chip: Google avatar + name from Access, fallback to /api/me ----
+
+async function loadUserChip() {
+  const chip = document.getElementById("user-chip");
+  if (!chip) return;
+
+  const pick = (o: unknown, k: string): string => {
+    const v = (o as Record<string, unknown> | null | undefined)?.[k];
+    return typeof v === "string" ? v : "";
+  };
+
+  let name = "";
+  let picture = "";
+  try {
+    // same-origin Access identity; includes IdP profile claims when configured
+    const res = await fetch("/cdn-cgi/access/get-identity");
+    if (res.ok) {
+      const id = (await res.json()) as Record<string, unknown>;
+      name = pick(id, "name") || pick(id.custom, "name") || pick(id.oidc_fields, "name");
+      picture = pick(id, "picture") || pick(id.custom, "picture") || pick(id.oidc_fields, "picture");
+    }
+  } catch {
+    // local dev: no Access in front
+  }
+  if (!name) {
+    try {
+      name = (await api.get<{ name: string }>("/api/me")).name ?? "";
+    } catch {
+      // not signed in / invite gate — keep the gear
+    }
+  }
+  if (!name && !picture) return;
+
+  const fallback = h(
+    "span",
+    { class: "avatar avatar-fallback", "aria-hidden": "true" },
+    (name[0] ?? "?").toUpperCase()
+  );
+  const avatar = picture
+    ? h("img", {
+        class: "avatar",
+        src: picture,
+        alt: "",
+        referrerpolicy: "no-referrer",
+        onerror: () => avatar.replaceWith(fallback),
+      })
+    : fallback;
+  chip.replaceChildren(avatar);
+  if (name) chip.append(h("span", { class: "user-name" }, name));
+}
+
+void loadUserChip();
+
 const now = new Date();
 document.getElementById("topbar-date")!.textContent = `${now.getFullYear()}/${
   now.getMonth() + 1

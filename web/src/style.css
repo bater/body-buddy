@@ -60,7 +60,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .brand { font-weight: 700; letter-spacing: 0.08em; color: inherit; text-decoration: none; }
 .topbar-date { color: var(--ink-3); font-size: 12.5px; flex: 1; }
-.gear { color: var(--ink-2); display: flex; align-self: center; }
+.gear { color: var(--ink-2); display: flex; align-self: center; align-items: center; gap: 7px; text-decoration: none; }
+.gear .avatar { width: 26px; height: 26px; border-radius: 50%; display: block; }
+.gear .avatar-fallback { display: flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; font-size: 12.5px; font-weight: 700; }
+.gear .user-name { font-size: 12.5px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 main {
   flex: 1;
