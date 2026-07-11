@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppContext } from "./env";
 import { resolveProvider } from "./ai/llm";
 import { authMiddleware } from "./auth";
+import { computeGamify, proteinSettings } from "./gamify";
 import food from "./routes/food";
 import workout from "./routes/workout";
 import inbody from "./routes/inbody";
@@ -49,6 +50,14 @@ app.get("/api/me", (c) => {
     }
   }
   return c.json(me);
+});
+
+app.get("/api/gamify", async (c) => {
+  const date = c.req.query("date") ?? "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return c.json({ error: "缺少 date 參數" }, 400);
+  const uid = c.get("userId");
+  const { targetG, minG } = await proteinSettings(c.env.DB, uid);
+  return c.json(await computeGamify(c.env.DB, uid, date, targetG, minG));
 });
 
 app.get("/api/settings", async (c) => {

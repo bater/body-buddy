@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../env";
-import { computeGamify } from "../gamify";
+import { computeGamify, proteinSettings } from "../gamify";
 
 const dashboard = new Hono<AppContext>();
 
@@ -10,14 +10,7 @@ dashboard.get("/", async (c) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return c.json({ error: "缺少 date 參數" }, 400);
   const uid = c.get("userId");
 
-  const { results: settingRows } = await c.env.DB.prepare(
-    "SELECT key, value FROM user_settings WHERE user_id = ? AND key IN ('protein_target_g','protein_min_g')"
-  )
-    .bind(uid)
-    .all<{ key: string; value: string }>();
-  const settings = Object.fromEntries(settingRows.map((r) => [r.key, r.value]));
-  const targetG = Number(settings.protein_target_g ?? 120);
-  const minG = Number(settings.protein_min_g ?? Math.round(targetG * 0.75));
+  const { targetG, minG } = await proteinSettings(c.env.DB, uid);
 
   const [protein, foodDaily, inbodyTrend, gamify] = await Promise.all([
     c.env.DB.prepare(

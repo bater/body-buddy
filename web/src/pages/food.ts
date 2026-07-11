@@ -1,6 +1,7 @@
-import { api, ApiError, type FoodDaily, type FoodItem, type FoodLog } from "../api";
+import { api, ApiError, type FoodDaily, type FoodItem, type FoodLog, type Gamify } from "../api";
 import { h, toast, todayStr, fmt } from "../ui";
 import { lineChart } from "../chart";
+import { gamifyCard } from "../gamify";
 
 const TREND_DAYS = 30;
 
@@ -54,6 +55,16 @@ export function renderFood(page: HTMLElement) {
   const editorBox = h("div");
   const listBox = h("div", { class: "card" });
   const trendBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
+  const gamifyBox = h("div");
+
+  async function refreshGamify() {
+    try {
+      const g = await api.get<Gamify>(`/api/gamify?date=${todayStr()}`);
+      gamifyBox.replaceChildren(gamifyCard(g));
+    } catch {
+      gamifyBox.replaceChildren();
+    }
+  }
 
   async function refreshTrend() {
     try {
@@ -214,6 +225,7 @@ export function renderFood(page: HTMLElement) {
                   renderEditor();
                   void refreshList();
                   void refreshTrend();
+                  void refreshGamify();
                 } catch (e) {
                   toast(e instanceof ApiError ? e.message : "儲存失敗");
                 }
@@ -286,6 +298,7 @@ export function renderFood(page: HTMLElement) {
                           await api.del(`/api/food/${log.id}`);
                           void refreshList();
                           void refreshTrend();
+                          void refreshGamify();
                         },
                       },
                       "✕"
@@ -301,6 +314,7 @@ export function renderFood(page: HTMLElement) {
   }
 
   page.replaceChildren(
+    gamifyBox,
     h("div", { class: "card" }, h("div", { class: "eyebrow" }, "日期"), dateInput),
     h(
       "div",
@@ -323,4 +337,5 @@ export function renderFood(page: HTMLElement) {
   }
   void refreshList();
   void refreshTrend();
+  void refreshGamify();
 }

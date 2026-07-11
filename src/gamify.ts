@@ -42,6 +42,23 @@ function levelFromXp(xp: number): { level: number; level_start_xp: number; next_
   };
 }
 
+/** Current 目標/最低 for a user; 最低 defaults to 75% of 目標 when unset. */
+export async function proteinSettings(
+  db: D1Database,
+  userId: number
+): Promise<{ targetG: number; minG: number }> {
+  const { results } = await db
+    .prepare(
+      "SELECT key, value FROM user_settings WHERE user_id = ? AND key IN ('protein_target_g','protein_min_g')"
+    )
+    .bind(userId)
+    .all<{ key: string; value: string }>();
+  const s = Object.fromEntries(results.map((r) => [r.key, r.value]));
+  const targetG = Number(s.protein_target_g ?? 120);
+  const minG = Number(s.protein_min_g ?? Math.round(targetG * 0.75));
+  return { targetG, minG };
+}
+
 export async function computeGamify(
   db: D1Database,
   userId: number,
