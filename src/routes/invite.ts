@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppContext, Env } from "../env";
 import { provisionUser } from "../auth";
-import { sendInviteEmail } from "../email";
+import { sendInviteEmail, sendMail } from "../email";
 
 const invite = new Hono<AppContext>();
 
@@ -81,6 +81,23 @@ invite.delete("/:id", async (c) => {
 });
 
 // ---- waiting list (admin) ----
+
+// Deliverability check: emails the admin's own address (the safe recipient for a
+// Mailgun sandbox domain). Never throws — returns the error text for the UI.
+invite.post("/test-email", async (c) => {
+  if (!requireAdmin(c)) return c.json({ error: "僅管理員" }, 403);
+  const to = c.get("userEmail");
+  try {
+    await sendMail(c.env, {
+      to,
+      subject: "Body Buddy 測試信",
+      text: "這是一封來自 Body Buddy 的測試信。\n若你收到它，代表 Mailgun 邀請信設定成功 🎉",
+    });
+    return c.json({ ok: true, to });
+  } catch (e) {
+    return c.json({ ok: false, to, error: e instanceof Error ? e.message : "寄信失敗" });
+  }
+});
 
 invite.get("/waitlist", async (c) => {
   if (!requireAdmin(c)) return c.json({ error: "僅管理員" }, 403);

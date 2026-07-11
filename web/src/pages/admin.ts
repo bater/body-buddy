@@ -123,10 +123,36 @@ function waitlistCard(): HTMLElement {
     );
   }
 
+  const testBtn = h(
+    "button",
+    {
+      class: "btn small",
+      style: "margin-bottom:8px",
+      onclick: async (e: Event) => {
+        const btn = e.currentTarget as HTMLButtonElement;
+        btn.disabled = true;
+        try {
+          const res = await api.post<{ ok: boolean; to: string; error?: string }>(
+            "/api/invite/test-email",
+            {}
+          );
+          if (res.ok) toast(`已寄測試信到 ${res.to}`);
+          else toast(res.error ? `寄信失敗：${res.error}` : "寄信失敗（未設定 Mailgun）");
+        } catch (err) {
+          toast(err instanceof ApiError ? err.message : "寄信失敗");
+        } finally {
+          btn.disabled = false;
+        }
+      },
+    },
+    "寄測試信到我的信箱"
+  );
+
   const card = h(
     "div",
     { class: "card" },
     h("div", { class: "eyebrow" }, "候補名單 WAITLIST"),
+    testBtn,
     linkBox,
     listBox
   );
