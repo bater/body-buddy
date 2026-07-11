@@ -38,8 +38,8 @@
     "VAPID_PUBLIC_KEY": "BHoskjdvQb_YlMmpUd84Fp-o-FP0azDpUxYfagw8IlPEbtYjdRSjZx6k1YJIhjuH9d3HLXj2aqFSbaknRbPpEeY",
     "VAPID_SUBJECT": "mailto:bater.coder@gmail.com",
     // Mailgun sending domain for invite emails (API key is a secret, see below).
-    // Fill in once you have a Mailgun domain; empty = email disabled (link fallback).
-    "MAILGUN_DOMAIN": ""
+    // Sandbox domains deliver only to Mailgun-verified Authorized Recipients.
+    "MAILGUN_DOMAIN": "sandbox946ae74e7da544e98ad2eaa35c29b186.mailgun.org"
   },
   "triggers": {
     // Meal reminders in Asia/Taipei: 09:30 / 13:30 / 19:30 → 01:30 / 05:30 / 11:30 UTC
