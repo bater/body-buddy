@@ -24,7 +24,7 @@ const XP_LOG_DAY = 10; // day with ≥1 food log
 const XP_MIN_DAY = 10; // day protein ≥ 最低 (keeps the streak)
 const XP_TARGET_DAY = 20; // day protein ≥ 目標 (on top of the min award)
 const XP_WORKOUT_DAY = 15; // bonus — workouts are never required
-const XP_INBODY = 20; // per InBody record
+const XP_INBODY = 20; // per InBody record logged in-app (imports don't count)
 const XP_STREAK_WEEK = 50; // every full 7 days inside a qualifying run
 
 /** Days since epoch; date strings are plain YYYY-MM-DD local days, so UTC math is gap-safe. */
@@ -74,7 +74,10 @@ async function loadRaw(db: D1Database, userId: number): Promise<Raw> {
       .bind(userId)
       .all<{ date: string; protein: number | null }>(),
     db.prepare("SELECT DISTINCT date FROM workout_entries WHERE user_id = ?").bind(userId).all<{ date: string }>(),
-    db.prepare("SELECT date FROM inbody_records WHERE user_id = ?").bind(userId).all<{ date: string }>(),
+    db
+      .prepare("SELECT date FROM inbody_records WHERE user_id = ? AND source != 'import'")
+      .bind(userId)
+      .all<{ date: string }>(),
   ]);
   return {
     foodDays: foodDays.results,
