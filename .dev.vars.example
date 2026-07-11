@@ -11,4 +11,11 @@ OPENROUTER_API_KEY=
 
 # Local identity (wrangler dev has no Cloudflare Access in front).
 # Switch the value to simulate different users.
-DEV_USER_EMAIL=bater.chen@frontier.cool
+DEV_USER_EMAIL=dev@example.com
+
+# Web Push meal reminders (optional locally). Generate a pair with
+# `npx web-push generate-vapid-keys`; prod uses wrangler.jsonc vars +
+# `wrangler secret put VAPID_PRIVATE_KEY`.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:you@example.com

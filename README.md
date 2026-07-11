@@ -6,15 +6,18 @@ trends. 繁體中文 mobile-first PWA, runs entirely on the Cloudflare free tier
 
 - **Stack**: Cloudflare Worker (Hono + TypeScript) serving a vanilla-TS Vite frontend, D1 (SQLite), R2 for InBody report photos
 - **AI**: free-text food parsing and InBody photo OCR via an OpenAI-compatible client — Mistral free tier (`mistral-small-latest`) or OpenRouter (any vision model). Everything degrades to manual entry when no key is set.
-- **Auth**: none in-app — put Cloudflare Access (Zero Trust) in front of the deployed domain.
+- **Auth**: none in-app — Cloudflare Access (Zero Trust) authenticates at the edge; the app authorizes via invite-gated onboarding (admins mint single-use, 7-day invite links from the hidden `#/admin` area).
+- **Gamification**: Duolingo-style XP/levels and a 🔥 streak, derived on read from existing records (no event log — edits self-heal the score). A day keeps the streak when food is logged **and** protein ≥ the 最低 threshold (default 75% of the 目標); hitting the full 目標, workouts, and in-app InBody records earn bonus XP, +50 per full streak week. 設定 shows a 成長日誌 replaying every level-up.
+- **Meal reminders**: Web Push (iOS 16.4+ Home-Screen PWA) at 09:30/13:30/19:30 Asia/Taipei via a cron trigger — streak-aware copy, silent once the day already qualifies. Enable per device in 設定 → 用餐提醒.
 
 ## Local development
 
 ```sh
 npm install
 npm run db:migrate:local
-cp .dev.vars.example .dev.vars   # optional: add MISTRAL_API_KEY or OPENROUTER_API_KEY
+cp .dev.vars.example .dev.vars   # optional: AI key + VAPID keys (see below)
 npm run dev                       # http://localhost:8787
+npm test                          # gamify rule unit tests (vitest)
 ```
 
 ## First deploy
@@ -29,16 +32,29 @@ npm run deploy
 ```
 
 Then in [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) create an Access
-application for the `workers.dev` domain with a policy allowing only your email.
+application for the `workers.dev` domain. Any policy that authenticates real
+identities works — membership is enforced in-app by invite links.
+
+### Web Push (meal reminders)
+
+Generate a VAPID keypair (any standard tool, e.g. `npx web-push generate-vapid-keys`),
+then:
+
+- `VAPID_PUBLIC_KEY` + `VAPID_SUBJECT` (a `mailto:`) go in `wrangler.jsonc` `vars`
+- `npx wrangler secret put VAPID_PRIVATE_KEY`
+
+Push sending is a safe no-op until the secret exists. Reminder times live in the
+cron trigger (`wrangler.jsonc`) and the meal table in `src/push.ts` (UTC hours).
 
 ## CI deploys
 
-Pushes to `main` deploy via `.github/workflows/deploy.yml`. Repository secrets required:
+Pushes to `main` typecheck, test, apply D1 migrations, and deploy via
+`.github/workflows/deploy.yml`. Repository secrets required:
 
 | Secret | Value |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | API token with the **Edit Cloudflare Workers** template + D1 edit permission |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → Workers & Pages → Account ID |
 
-Worker secrets (`MISTRAL_API_KEY` / `OPENROUTER_API_KEY`) are set once via
-`wrangler secret put` and survive deploys.
+Worker secrets survive deploys and are set once via `wrangler secret put`:
+`MISTRAL_API_KEY` / `OPENROUTER_API_KEY` (AI) and `VAPID_PRIVATE_KEY` (push).

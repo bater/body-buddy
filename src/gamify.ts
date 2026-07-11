@@ -34,7 +34,7 @@ function dayNum(date: string): number {
 }
 
 /** Advancing from level L costs 100×L XP, so level L starts at 100×L×(L−1)/2 cumulative. */
-function levelFromXp(xp: number): { level: number; level_start_xp: number; next_level_xp: number } {
+export function levelFromXp(xp: number): { level: number; level_start_xp: number; next_level_xp: number } {
   let level = 1;
   while ((100 * level * (level + 1)) / 2 <= xp) level++;
   return {
@@ -61,7 +61,7 @@ export async function proteinSettings(
   return { targetG, minG };
 }
 
-type Raw = {
+export type Raw = {
   foodDays: { date: string; protein: number | null }[];
   workoutDates: string[];
   inbodyDates: string[];
@@ -87,7 +87,7 @@ async function loadRaw(db: D1Database, userId: number): Promise<Raw> {
 }
 
 /** XP earned per date, plus the sorted qualifying (streak-keeping) dates. */
-function xpByDate(raw: Raw, targetG: number, minG: number): { byDate: Map<string, number>; qualifying: string[] } {
+export function xpByDate(raw: Raw, targetG: number, minG: number): { byDate: Map<string, number>; qualifying: string[] } {
   const byDate = new Map<string, number>();
   const add = (d: string, v: number) => byDate.set(d, (byDate.get(d) ?? 0) + v);
 
@@ -119,7 +119,7 @@ function xpByDate(raw: Raw, targetG: number, minG: number): { byDate: Map<string
 
 /** Length of the qualifying run reaching today — or yesterday, since an
  * unfinished today shouldn't break the chain (Duolingo behavior). */
-function currentStreak(qualifying: string[], date: string): number {
+export function currentStreak(qualifying: string[], date: string): number {
   const todayN = dayNum(date);
   let streak = 0;
   let runLen = 0;
@@ -165,7 +165,24 @@ export async function computeGamify(
   return buildGamify(raw, byDate, qualifying, date, targetG, minG);
 }
 
-/** Replay XP chronologically to date each level-up; entry 1 is the first-ever record day. */
+/** Replay per-day XP chronologically to date each level-up.
+ * 🌱 (the level-1 entry) marks the first FOOD log — the habit anchor — not the
+ * earliest XP-earning activity (a backdated workout/InBody would start it too early). */
+export function replayJourney(byDate: Map<string, number>, firstFood: string | undefined): JourneyEntry[] {
+  const journey: JourneyEntry[] = [];
+  if (firstFood) journey.push({ date: firstFood, level: 1, xp: 0 });
+  let cum = 0;
+  let level = 1;
+  for (const d of [...byDate.keys()].sort()) {
+    cum += byDate.get(d)!;
+    while ((100 * level * (level + 1)) / 2 <= cum) {
+      level++;
+      journey.push({ date: d, level, xp: cum });
+    }
+  }
+  return journey;
+}
+
 export async function computeJourney(
   db: D1Database,
   userId: number,
@@ -175,22 +192,9 @@ export async function computeJourney(
 ): Promise<{ current: Gamify; journey: JourneyEntry[] }> {
   const raw = await loadRaw(db, userId);
   const { byDate, qualifying } = xpByDate(raw, targetG, minG);
-
-  const journey: JourneyEntry[] = [];
-  const dates = [...byDate.keys()].sort();
-  // 🌱 marks the first FOOD log — the habit anchor — not the earliest
-  // XP-earning activity (a backdated workout/InBody would start it too early)
   const firstFood = raw.foodDays.map((r) => r.date).sort()[0];
-  if (firstFood) journey.push({ date: firstFood, level: 1, xp: 0 });
-  let cum = 0;
-  let level = 1;
-  for (const d of dates) {
-    cum += byDate.get(d)!;
-    while ((100 * level * (level + 1)) / 2 <= cum) {
-      level++;
-      journey.push({ date: d, level, xp: cum });
-    }
-  }
-
-  return { current: buildGamify(raw, byDate, qualifying, date, targetG, minG), journey };
+  return {
+    current: buildGamify(raw, byDate, qualifying, date, targetG, minG),
+    journey: replayJourney(byDate, firstFood),
+  };
 }
