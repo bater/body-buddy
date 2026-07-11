@@ -7,6 +7,7 @@ import { renderWorkout } from "./pages/workout";
 import { renderInBody } from "./pages/inbody";
 import { renderExercises } from "./pages/exercises";
 import { renderSettings } from "./pages/settings";
+import { renderAdmin } from "./pages/admin";
 
 const routes: Record<string, (page: HTMLElement) => void> = {
   "": renderDashboard,
@@ -15,6 +16,7 @@ const routes: Record<string, (page: HTMLElement) => void> = {
   inbody: renderInBody,
   exercises: renderExercises,
   settings: renderSettings,
+  admin: renderAdmin,
 };
 
 function currentRoute(): string {
