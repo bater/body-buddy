@@ -2,6 +2,152 @@ import { api, ApiError, type Gamify, type InBodyRecord, type JourneyEntry } from
 import { h, toast, fmt, fmtDateShort, todayStr } from "../ui";
 import { levelTitle } from "../gamify";
 
+const MEAL_TOGGLES: { key: string; label: string; time: string }[] = [
+  { key: "reminder_breakfast", label: "早餐", time: "09:30" },
+  { key: "reminder_lunch", label: "午餐", time: "13:30" },
+  { key: "reminder_dinner", label: "晚餐", time: "19:30" },
+];
+
+function urlB64ToUint8Array(b64: string): Uint8Array {
+  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+function reminderCard(settings: Record<string, string>): HTMLElement {
+  const body = h("div");
+  const card = h(
+    "div",
+    { class: "card" },
+    h("div", { class: "eyebrow" }, "用餐提醒"),
+    body
+  );
+
+  const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+  const renderOff = () => {
+    body.replaceChildren(
+      h(
+        "p",
+        { class: "muted small", style: "margin-bottom:10px" },
+        "用餐時間沒記錄就推播提醒（早餐 09:30・午餐 13:30・晚餐 19:30），當天達到最低蛋白質後自動安靜。"
+      ),
+      supported
+        ? h(
+            "button",
+            {
+              class: "btn primary",
+              style: "width:100%",
+              onclick: async (e: Event) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                btn.disabled = true;
+                try {
+                  const perm = await Notification.requestPermission();
+                  if (perm !== "granted") return toast("未授權通知，無法啟用");
+                  const { key } = await api.get<{ key: string | null }>("/api/push/pubkey");
+                  if (!key) return toast("伺服器尚未設定推播金鑰");
+                  const reg =
+                    (await navigator.serviceWorker.getRegistration()) ??
+                    (await navigator.serviceWorker.register("/sw.js"));
+                  await navigator.serviceWorker.ready;
+                  const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlB64ToUint8Array(key).buffer as ArrayBuffer,
+                  });
+                  const json = sub.toJSON();
+                  await api.post("/api/push/subscribe", { endpoint: json.endpoint, keys: json.keys });
+                  toast("已啟用用餐提醒");
+                  renderOn(sub);
+                } catch (err) {
+                  toast(err instanceof ApiError ? err.message : "啟用失敗");
+                } finally {
+                  btn.disabled = false;
+                }
+              },
+            },
+            "啟用提醒"
+          )
+        : h(
+            "p",
+            { class: "small" },
+            "此瀏覽器不支援推播。iPhone 需 iOS 16.4+，先把 App「加入主畫面」，再從主畫面開啟後啟用。"
+          )
+    );
+  };
+
+  const renderOn = (sub: PushSubscription) => {
+    body.replaceChildren(
+      h(
+        "div",
+        { style: "display:flex;gap:14px;margin-bottom:10px" },
+        ...MEAL_TOGGLES.map((m) => {
+          const box = h("input", {
+            type: "checkbox",
+            onchange: async () => {
+              try {
+                await api.put("/api/settings", { [m.key]: box.checked ? "1" : "0" });
+                toast(`${m.label}提醒${box.checked ? "已開啟" : "已關閉"}`);
+              } catch {
+                toast("儲存失敗");
+                box.checked = !box.checked;
+              }
+            },
+          });
+          box.checked = settings[m.key] !== "0";
+          return h("label", { class: "small", style: "display:flex;align-items:center;gap:5px" }, box, `${m.label} ${m.time}`);
+        })
+      ),
+      h(
+        "div",
+        { class: "btn-row" },
+        h(
+          "button",
+          {
+            class: "btn small grow",
+            onclick: async () => {
+              try {
+                const res = await api.post<{ sent: number; devices: number }>("/api/push/test", {});
+                toast(`已送出測試通知（${res.sent}/${res.devices} 裝置）`);
+              } catch (err) {
+                toast(err instanceof ApiError ? err.message : "測試失敗");
+              }
+            },
+          },
+          "發送測試通知"
+        ),
+        h(
+          "button",
+          {
+            class: "btn small",
+            onclick: async () => {
+              try {
+                await sub.unsubscribe();
+                await api.post("/api/push/unsubscribe", { endpoint: sub.endpoint });
+                toast("此裝置已停用提醒");
+                renderOff();
+              } catch {
+                toast("停用失敗");
+              }
+            },
+          },
+          "停用"
+        )
+      )
+    );
+  };
+
+  if (!supported) {
+    renderOff();
+  } else {
+    void navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => reg?.pushManager.getSubscription())
+      .then((sub) => (sub ? renderOn(sub) : renderOff()))
+      .catch(renderOff);
+  }
+  return card;
+}
+
 export function renderSettings(page: HTMLElement) {
   page.replaceChildren(h("div", { class: "empty" }, "載入中…"));
 
@@ -87,6 +233,7 @@ export function renderSettings(page: HTMLElement) {
           "儲存"
         )
       ),
+      reminderCard(settings),
       h(
         "div",
         { class: "card" },

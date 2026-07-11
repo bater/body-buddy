@@ -3,6 +3,8 @@
   "name": "body-buddy",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-01",
+  // web-push lib references node:crypto in its fallback path (unused on workerd, but must resolve)
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "web/dist",
     "binding": "ASSETS",
@@ -30,7 +32,14 @@
     "ACCESS_TEAM_DOMAIN": "bater-made.cloudflareaccess.com",
     "ACCESS_AUD": "38e649fc5079be2e8cd24382856a40541021b03b00d68ccebf61fdfefc1f1d92",
     // First login among these emails adopts all pre-multi-user data
-    "OWNER_EMAILS": "bater.coder@gmail.com"
+    "OWNER_EMAILS": "bater.coder@gmail.com",
+    // Web Push VAPID public key (public by design; private half is a secret)
+    "VAPID_PUBLIC_KEY": "BHoskjdvQb_YlMmpUd84Fp-o-FP0azDpUxYfagw8IlPEbtYjdRSjZx6k1YJIhjuH9d3HLXj2aqFSbaknRbPpEeY",
+    "VAPID_SUBJECT": "mailto:bater.coder@gmail.com"
+  },
+  "triggers": {
+    // Meal reminders in Asia/Taipei: 09:30 / 13:30 / 19:30 → 01:30 / 05:30 / 11:30 UTC
+    "crons": ["30 1,5,11 * * *"]
   },
   "observability": {
     "enabled": true

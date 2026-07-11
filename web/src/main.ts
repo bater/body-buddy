@@ -144,5 +144,9 @@ document.getElementById("topbar-date")!.textContent = `${now.getFullYear()}/${
   now.getMonth() + 1
 }/${now.getDate()}（${"日一二三四五六"[now.getDay()]}）`;
 
+if ("serviceWorker" in navigator) {
+  void navigator.serviceWorker.register("/sw.js");
+}
+
 window.addEventListener("hashchange", render);
 render();

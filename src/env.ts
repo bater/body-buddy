@@ -12,6 +12,10 @@ export type Env = {
   ACCESS_AUD?: string; // Access application Audience tag; enables JWT verification
   OWNER_EMAILS?: string; // comma-separated; first login among these claims pre-multi-user data
   DEV_USER_EMAIL?: string; // .dev.vars only — local identity without Access
+  // Web Push (meal reminders)
+  VAPID_PUBLIC_KEY?: string; // vars — public by design
+  VAPID_PRIVATE_KEY?: string; // secret
+  VAPID_SUBJECT?: string; // mailto: contact for push services
 };
 
 export type AppContext = {

@@ -1,8 +1,10 @@
 import { Hono } from "hono";
-import type { AppContext } from "./env";
+import type { AppContext, Env } from "./env";
 import { resolveProvider } from "./ai/llm";
 import { authMiddleware } from "./auth";
 import { computeGamify, computeJourney, proteinSettings } from "./gamify";
+import { runMealReminders } from "./push";
+import push from "./routes/push";
 import food from "./routes/food";
 import workout from "./routes/workout";
 import inbody from "./routes/inbody";
@@ -23,6 +25,7 @@ app.route("/api/workouts", workout);
 app.route("/api/inbody", inbody);
 app.route("/api/dashboard", dashboard);
 app.route("/api/invite", invite);
+app.route("/api/push", push);
 
 app.get("/api/me", (c) => {
   const me: Record<string, unknown> = {
@@ -97,4 +100,9 @@ app.get("/api/health", (c) => {
   });
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(runMealReminders(env, event.scheduledTime));
+  },
+};

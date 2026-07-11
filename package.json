@@ -12,6 +12,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply body-monitor-db --remote"
   },
   "dependencies": {
+    "@block65/webcrypto-web-push": "^1.0.2",
     "hono": "^4.6.0"
   },
   "devDependencies": {
