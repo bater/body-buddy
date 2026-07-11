@@ -4,9 +4,9 @@ export class ApiError extends Error {
   }
 }
 
-// installed by main.ts — shows the invite-gate screen when the account isn't a member
-let inviteRequiredHandler: ((logoutUrl: string | null) => void) | null = null;
-export function onInviteRequired(fn: (logoutUrl: string | null) => void) {
+// installed by main.ts — handles the invite-gate when the account isn't a member
+let inviteRequiredHandler: ((logoutUrl: string | null, email: string | null) => void) | null = null;
+export function onInviteRequired(fn: (logoutUrl: string | null, email: string | null) => void) {
   inviteRequiredHandler = fn;
 }
 
@@ -15,9 +15,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isJson = res.headers.get("content-type")?.includes("application/json");
   const body = isJson ? await res.json() : null;
   if (!res.ok) {
-    const err = body as { error?: string; code?: string; logout_url?: string | null } | null;
+    const err = body as {
+      error?: string;
+      code?: string;
+      email?: string | null;
+      logout_url?: string | null;
+    } | null;
     if (res.status === 403 && err?.code === "invite_required") {
-      inviteRequiredHandler?.(err.logout_url ?? null);
+      inviteRequiredHandler?.(err.logout_url ?? null, err.email ?? null);
     }
     throw new ApiError(err?.error ?? `請求失敗 (${res.status})`, res.status);
   }

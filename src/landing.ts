@@ -57,10 +57,18 @@ button:disabled{opacity:.6}
 .err{color:var(--accent);font-weight:600}
 .foot{text-align:center;margin-top:22px;font-size:13px}
 .foot a{color:var(--accent);text-decoration:none}
+.notice{display:none;background:var(--card);border:1px solid var(--accent);border-radius:var(--radius);padding:14px 16px;margin-top:16px}
+.notice b{display:block;font-size:15px;margin-bottom:4px}
+.notice span{font-size:13px;color:var(--ink-2)}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="notice" id="notice">
+    <b>此帳號尚未受邀</b>
+    <span id="noticemsg"></span>
+  </div>
+
   <div class="hero">
     <div class="logo">Body Buddy</div>
     <div class="tag">你的隨身健身管家</div>
@@ -87,10 +95,7 @@ button:disabled{opacity:.6}
 </div>
 <script>
 var f=document.getElementById("f"),btn=document.getElementById("btn"),msg=document.getElementById("msg");
-f.addEventListener("submit",function(e){
-  e.preventDefault();
-  var email=document.getElementById("email").value.trim();
-  var note=document.getElementById("note").value.trim();
+function submit(email,note){
   if(!email)return;
   btn.disabled=true;msg.className="note";msg.textContent="送出中…";
   fetch("/api/waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:email,note:note})})
@@ -101,7 +106,21 @@ f.addEventListener("submit",function(e){
     })
     .catch(function(){msg.className="note err";msg.textContent="送出失敗，請稍後再試";})
     .finally(function(){btn.disabled=false;});
+}
+f.addEventListener("submit",function(e){
+  e.preventDefault();
+  submit(document.getElementById("email").value.trim(),document.getElementById("note").value.trim());
 });
+// Arrived here after logging in with an un-invited account: pre-fill the
+// Access-verified email and auto-add it to the waiting list.
+var pending=new URLSearchParams(location.search).get("pending");
+if(pending){
+  history.replaceState(null,"","/welcome");
+  document.getElementById("email").value=pending;
+  document.getElementById("notice").style.display="block";
+  document.getElementById("noticemsg").textContent=pending+" 目前還沒有邀請。已為你自動加入等候名單，通過後會寄邀請到這個信箱。";
+  submit(pending,"");
+}
 </script>
 </body>
 </html>`;

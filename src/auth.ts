@@ -191,6 +191,7 @@ export async function authMiddleware(c: Context<AppContext>, next: Next) {
         {
           error: "此帳號尚未受邀",
           code: "invite_required",
+          email,
           logout_url: env.ACCESS_TEAM_DOMAIN
             ? `https://${env.ACCESS_TEAM_DOMAIN}/cdn-cgi/access/logout`
             : null,

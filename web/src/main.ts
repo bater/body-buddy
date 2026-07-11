@@ -69,7 +69,7 @@ function showBlocked(logoutUrl: string | null, message?: string) {
   );
 }
 
-onInviteRequired((logoutUrl) => {
+onInviteRequired((logoutUrl, email) => {
   if (inviteToken) {
     // authenticated newcomer arriving via an invite link — redeem it
     document.getElementById("page")!.replaceChildren(
@@ -83,7 +83,9 @@ onInviteRequired((logoutUrl) => {
       })
       .catch((e) => showBlocked(logoutUrl, e instanceof Error ? e.message : undefined));
   } else {
-    showBlocked(logoutUrl);
+    // authenticated but not a member — hand off to the public landing page, which
+    // auto-adds their (Access-verified) email to the waiting list.
+    location.replace("/welcome?pending=" + encodeURIComponent(email ?? ""));
   }
 });
 
