@@ -6,7 +6,7 @@ trends. 繁體中文 mobile-first PWA, runs entirely on the Cloudflare free tier
 
 ## Features (v0.0.7)
 
-Eight core features — no install, no ads, your data stays yours:
+Seven core features — no install, no ads, your data stays yours:
 
 1. **🍱 AI food logging** — type「雞胸肉一份＋豆漿」and AI parses it into
    items, protein and calories; always degrades gracefully to manual entry
@@ -22,8 +22,6 @@ Eight core features — no install, no ads, your data stays yours:
    only nags when you haven't logged, and goes silent once the day qualifies
 7. **🤖 AI coach** — feedback at the moments that matter (targets hit,
    personal records) in three tones: 友善／嚴格／專業
-8. **👨‍👩‍👧‍👦 Invite-only multi-user** — Cloudflare Access at the edge,
-   single-use invite links, fully isolated per-user data
 
 Version history lives in [CHANGELOG.md](CHANGELOG.md) and the in-app 關於
 page (設定 → 關於 Body Buddy).

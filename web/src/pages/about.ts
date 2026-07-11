@@ -37,11 +37,6 @@ const FEATURES: { icon: string; title: string; desc: string }[] = [
     title: "AI 教練",
     desc: "達標、破紀錄的重要時刻給你回饋，友善／嚴格／專業三種風格",
   },
-  {
-    icon: "👨‍👩‍👧‍👦",
-    title: "邀請制多人",
-    desc: "邀請連結讓家人朋友加入，各自的資料完全獨立",
-  },
 ];
 
 export function renderAbout(page: HTMLElement) {
