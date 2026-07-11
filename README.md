@@ -46,6 +46,17 @@ then:
 Push sending is a safe no-op until the secret exists. Reminder times live in the
 cron trigger (`wrangler.jsonc`) and the meal table in `src/push.ts` (UTC hours).
 
+## Hosting decision (2026-07-11)
+
+Stay on the **Cloudflare free tier** — at family scale the app uses a fraction
+of the free limits (100k req/day Workers, 5GB D1, 10GB R2 with free egress,
+Access free ≤50 users). Revisit only when a limit actually approaches (D1
+row-read warnings or R2 nearing 10GB); the first escalation is the $5/mo
+Workers Paid plan (one click, no code changes), **not** a cloud migration —
+a big-three equivalent costs more and its only real payoff would be as a
+learning rebuild. To keep a future auth swap tractable, preserve the split
+where Access only authenticates and the app authorizes via its own users table.
+
 ## CI deploys
 
 Pushes to `main` typecheck, test, apply D1 migrations, and deploy via
