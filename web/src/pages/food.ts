@@ -1,7 +1,6 @@
-import { api, ApiError, type CoachFeedback, type FoodDaily, type FoodItem, type FoodLog, type Gamify } from "../api";
+import { api, ApiError, type CoachFeedback, type FoodDaily, type FoodItem, type FoodLog } from "../api";
 import { h, toast, todayStr, fmt } from "../ui";
 import { lineChart } from "../chart";
-import { gamifyCard } from "../gamify";
 import { showCoach } from "../coach";
 
 const TREND_DAYS = 30;
@@ -57,16 +56,25 @@ export function renderFood(page: HTMLElement) {
   const coachBox = h("div");
   const listBox = h("div", { class: "card" });
   const trendBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
-  const gamifyBox = h("div");
 
-  async function refreshGamify() {
-    try {
-      const g = await api.get<Gamify>(`/api/gamify?date=${todayStr()}`);
-      gamifyBox.replaceChildren(gamifyCard(g));
-    } catch {
-      gamifyBox.replaceChildren();
-    }
-  }
+  // recording input (textarea + AI/manual), hidden until "新增飲食紀錄" is tapped
+  const recordBox = h(
+    "div",
+    { class: "card", style: "display:none" },
+    h("div", { class: "eyebrow" }, "記錄飲食"),
+    textarea,
+    h("div", { class: "btn-row", style: "margin-top:10px" }, parseBtn, manualBtn)
+  );
+  const showRecord = () => {
+    recordBox.style.display = "";
+    recordBox.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const addBtn = h(
+    "button",
+    { class: "btn primary grow", onclick: showRecord },
+    "＋ 新增飲食紀錄"
+  );
 
   async function refreshTrend() {
     try {
@@ -228,10 +236,10 @@ export function renderFood(page: HTMLElement) {
                   toast("已儲存");
                   editor = null;
                   textarea.value = "";
+                  recordBox.style.display = "none";
                   renderEditor();
                   void refreshList();
                   void refreshTrend();
-                  void refreshGamify();
                 } catch (e) {
                   toast(e instanceof ApiError ? e.message : "儲存失敗");
                 }
@@ -304,7 +312,6 @@ export function renderFood(page: HTMLElement) {
                           await api.del(`/api/food/${log.id}`);
                           void refreshList();
                           void refreshTrend();
-                          void refreshGamify();
                         },
                       },
                       "✕"
@@ -320,19 +327,12 @@ export function renderFood(page: HTMLElement) {
   }
 
   page.replaceChildren(
-    gamifyBox,
-    h("div", { class: "card" }, h("div", { class: "eyebrow" }, "日期"), dateInput),
-    h(
-      "div",
-      { class: "card" },
-      h("div", { class: "eyebrow" }, "記錄飲食"),
-      textarea,
-      h("div", { class: "btn-row", style: "margin-top:10px" }, parseBtn, manualBtn)
-    ),
-    editorBox,
-    coachBox,
+    trendBox,
     listBox,
-    trendBox
+    h("div", { class: "btn-row" }, addBtn, dateInput),
+    recordBox,
+    editorBox,
+    coachBox
   );
 
   // quick-add handoff from dashboard
@@ -340,9 +340,9 @@ export function renderFood(page: HTMLElement) {
   if (quick) {
     sessionStorage.removeItem("quickFoodText");
     textarea.value = quick;
+    showRecord();
     void doParse();
   }
   void refreshList();
   void refreshTrend();
-  void refreshGamify();
 }
