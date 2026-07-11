@@ -75,6 +75,22 @@ workout.get("/last/:exerciseId", async (c) => {
   return c.json(row ?? null);
 });
 
+// Full per-exercise history for the exercise detail page
+workout.get("/history/:exerciseId", async (c) => {
+  const exercise = await c.env.DB.prepare(
+    "SELECT id, name, muscle_group FROM exercises WHERE id = ? AND user_id = ?"
+  )
+    .bind(c.req.param("exerciseId"), c.get("userId"))
+    .first();
+  if (!exercise) return c.json({ error: "動作不存在" }, 404);
+  const { results } = await c.env.DB.prepare(
+    "SELECT id, date, weight_kg, reps, sets, note FROM workout_entries WHERE exercise_id = ? AND user_id = ? ORDER BY date DESC, id DESC"
+  )
+    .bind(c.req.param("exerciseId"), c.get("userId"))
+    .all();
+  return c.json({ exercise, entries: results });
+});
+
 // Per-exercise history for the progression chart: best (heaviest) set per day
 workout.get("/progression/:exerciseId", async (c) => {
   const { results } = await c.env.DB.prepare(

@@ -103,8 +103,12 @@ export function renderExercises(page: HTMLElement) {
       h(
         "div",
         { class: "row" },
-        h("span", { class: "grow" }, ex.name),
-        h("span", { class: "muted small num" }, ex.entry_count > 0 ? `${ex.entry_count} 筆` : ""),
+        h(
+          "a",
+          { class: "grow", href: `#/exercise?id=${ex.id}`, style: "color:inherit;text-decoration:none" },
+          ex.name,
+          ex.entry_count > 0 ? h("span", { class: "muted small num" }, `　${ex.entry_count} 筆 ›`) : null
+        ),
         h(
           "button",
           {
