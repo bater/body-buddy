@@ -43,6 +43,13 @@ if the feature is user-visible.
 - **Auth**: Cloudflare Access authenticates (JWT verified in `src/auth.ts`);
   the app authorizes — membership comes from invite links (`#/admin`, admin
   only, APIs 403 server-side). `OWNER_EMAILS` claims data + admin on first login.
+  The main Access application's policy is intentionally **Allow → Everyone**
+  (any Google login passes the edge), NOT an email allowlist: authorization is
+  the app's job (a non-member authenticates fine but gets 403 `invite_required`
+  on every endpoint except invite redeem). Do NOT re-add a Cloudflare email
+  allowlist — it would force adding each invitee to Access by hand and defeats
+  the invite system. "Allow Everyone" still requires login; only the `/welcome`
+  Bypass app skips it (see Public surface below).
 - **Public surface**: Access guards the whole app at the edge, so the two
   public paths — `GET /welcome` (self-contained landing HTML in `src/landing.ts`,
   no dependency on protected assets) and `POST /api/waitlist` — only work if
