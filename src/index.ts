@@ -10,6 +10,7 @@ import workout from "./routes/workout";
 import inbody from "./routes/inbody";
 import dashboard from "./routes/dashboard";
 import invite from "./routes/invite";
+import coach from "./routes/coach";
 
 const app = new Hono<AppContext>();
 
@@ -26,6 +27,7 @@ app.route("/api/inbody", inbody);
 app.route("/api/dashboard", dashboard);
 app.route("/api/invite", invite);
 app.route("/api/push", push);
+app.route("/api/coach", coach);
 
 app.get("/api/me", (c) => {
   const me: Record<string, unknown> = {

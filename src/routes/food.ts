@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppContext } from "../env";
 import { parseFoodText, AiError, type FoodItem } from "../ai/llm";
+import { foodContext, runCoach, type Coach } from "../coach";
 
 const food = new Hono<AppContext>();
 
@@ -59,7 +60,16 @@ food.post("/", async (c) => {
   )
     .bind(c.get("userId"), body.date, body.raw_text ?? "", JSON.stringify(body.items), t.protein_g, t.calories)
     .run();
-  return c.json({ id: res.meta.last_row_id, ...t }, 201);
+  // tier-0 coach feedback; ?today= is the client's local day (absent for curl
+  // → treat the record date as today). A coach failure never fails the save.
+  let coach: Coach | null = null;
+  try {
+    const today = c.req.query("today") ?? body.date;
+    coach = runCoach(await foodContext(c.env.DB, c.get("userId"), { date: body.date, protein_g: t.protein_g }, today));
+  } catch (e) {
+    console.error("food coach", e);
+  }
+  return c.json({ id: res.meta.last_row_id, ...t, coach }, 201);
 });
 
 food.put("/:id", async (c) => {
@@ -77,9 +87,13 @@ food.put("/:id", async (c) => {
 });
 
 food.delete("/:id", async (c) => {
-  await c.env.DB.prepare("DELETE FROM food_logs WHERE id = ? AND user_id = ?")
-    .bind(c.req.param("id"), c.get("userId"))
-    .run();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM food_logs WHERE id = ? AND user_id = ?").bind(c.req.param("id"), c.get("userId")),
+    c.env.DB.prepare("DELETE FROM coach_feedback WHERE user_id = ? AND kind = 'food' AND record_id = ?").bind(
+      c.get("userId"),
+      c.req.param("id")
+    ),
+  ]);
   return c.json({ ok: true });
 });
 

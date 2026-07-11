@@ -122,6 +122,7 @@ main > *, .card, .field-grid > *, .btn-row > * { min-width: 0; }
   border-radius: var(--radius);
   padding: 16px;
 }
+.card.coach { border-left: 3px solid var(--accent); }
 .eyebrow {
   font-size: 11px;
   letter-spacing: 0.14em;

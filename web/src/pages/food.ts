@@ -1,7 +1,8 @@
-import { api, ApiError, type FoodDaily, type FoodItem, type FoodLog, type Gamify } from "../api";
+import { api, ApiError, type CoachFeedback, type FoodDaily, type FoodItem, type FoodLog, type Gamify } from "../api";
 import { h, toast, todayStr, fmt } from "../ui";
 import { lineChart } from "../chart";
 import { gamifyCard } from "../gamify";
+import { showCoach } from "../coach";
 
 const TREND_DAYS = 30;
 
@@ -53,6 +54,7 @@ export function renderFood(page: HTMLElement) {
   );
 
   const editorBox = h("div");
+  const coachBox = h("div");
   const listBox = h("div", { class: "card" });
   const trendBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
   const gamifyBox = h("div");
@@ -217,7 +219,11 @@ export function renderFood(page: HTMLElement) {
                   if (st.editingId) {
                     await api.put(`/api/food/${st.editingId}`, { date, items });
                   } else {
-                    await api.post("/api/food", { date, raw_text: st.rawText, items });
+                    const res = await api.post<{ id: number; coach: CoachFeedback }>(
+                      `/api/food?today=${todayStr()}`,
+                      { date, raw_text: st.rawText, items }
+                    );
+                    showCoach(coachBox, res.coach, "food", res.id);
                   }
                   toast("已儲存");
                   editor = null;
@@ -324,6 +330,7 @@ export function renderFood(page: HTMLElement) {
       h("div", { class: "btn-row", style: "margin-top:10px" }, parseBtn, manualBtn)
     ),
     editorBox,
+    coachBox,
     listBox,
     trendBox
   );

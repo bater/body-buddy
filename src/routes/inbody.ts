@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppContext } from "../env";
 import { extractInBody, AiError } from "../ai/llm";
+import { inbodyContext, runCoach, type Coach } from "../coach";
 
 const inbody = new Hono<AppContext>();
 
@@ -82,7 +83,25 @@ inbody.post("/", async (c) => {
       b.raw_json ? JSON.stringify(b.raw_json) : null
     )
     .run();
-  return c.json({ id: res.meta.last_row_id }, 201);
+  // tier-0 coach feedback; imports earn no coach (mirrors the gamify XP rule).
+  // A coach failure never fails the save.
+  let coach: Coach | null = null;
+  if (source !== "import") {
+    try {
+      coach = runCoach(
+        await inbodyContext(c.env.DB, c.get("userId"), {
+          id: Number(res.meta.last_row_id),
+          date: String(b.date),
+          weight_kg: Number(b.weight_kg),
+          skeletal_muscle_mass_kg: b.skeletal_muscle_mass_kg == null ? null : Number(b.skeletal_muscle_mass_kg),
+          body_fat_percent: b.body_fat_percent == null ? null : Number(b.body_fat_percent),
+        })
+      );
+    } catch (e) {
+      console.error("inbody coach", e);
+    }
+  }
+  return c.json({ id: res.meta.last_row_id, coach }, 201);
 });
 
 inbody.put("/:id", async (c) => {
@@ -104,9 +123,16 @@ inbody.delete("/:id", async (c) => {
     .bind(c.req.param("id"), c.get("userId"))
     .first<{ photo_key: string | null }>();
   if (row?.photo_key) await c.env.PHOTOS.delete(row.photo_key);
-  await c.env.DB.prepare("DELETE FROM inbody_records WHERE id = ? AND user_id = ?")
-    .bind(c.req.param("id"), c.get("userId"))
-    .run();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM inbody_records WHERE id = ? AND user_id = ?").bind(
+      c.req.param("id"),
+      c.get("userId")
+    ),
+    c.env.DB.prepare("DELETE FROM coach_feedback WHERE user_id = ? AND kind = 'inbody' AND record_id = ?").bind(
+      c.get("userId"),
+      c.req.param("id")
+    ),
+  ]);
   return c.json({ ok: true });
 });
 

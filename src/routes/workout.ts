@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../env";
+import { runCoach, workoutContext, type Coach } from "../coach";
 
 const workout = new Hono<AppContext>();
 
@@ -113,16 +114,40 @@ workout.post("/", async (c) => {
   if (!b.date || !b.exercise_id || b.weight_kg == null || !b.reps || !b.sets) {
     return c.json({ error: "缺少必要欄位（date, exercise_id, weight_kg, reps, sets）" }, 400);
   }
-  const owns = await c.env.DB.prepare("SELECT id FROM exercises WHERE id = ? AND user_id = ?")
+  const owns = await c.env.DB.prepare("SELECT id, name FROM exercises WHERE id = ? AND user_id = ?")
     .bind(b.exercise_id, c.get("userId"))
-    .first();
+    .first<{ id: number; name: string }>();
   if (!owns) return c.json({ error: "動作不存在" }, 400);
   const res = await c.env.DB.prepare(
     "INSERT INTO workout_entries (user_id, date, exercise_id, weight_kg, reps, sets, note) VALUES (?, ?, ?, ?, ?, ?, ?)"
   )
     .bind(c.get("userId"), b.date, b.exercise_id, b.weight_kg, b.reps, b.sets, b.note ?? null)
     .run();
-  return c.json({ id: res.meta.last_row_id }, 201);
+  // tier-0 coach feedback; ?today= is the client's local day (absent for curl
+  // → treat the record date as today). A coach failure never fails the save.
+  let coach: Coach | null = null;
+  try {
+    const today = c.req.query("today") ?? b.date;
+    coach = runCoach(
+      await workoutContext(
+        c.env.DB,
+        c.get("userId"),
+        {
+          id: Number(res.meta.last_row_id),
+          date: b.date,
+          exercise_id: b.exercise_id,
+          weight_kg: b.weight_kg,
+          reps: b.reps,
+          sets: b.sets,
+          exercise_name: owns.name,
+        },
+        today
+      )
+    );
+  } catch (e) {
+    console.error("workout coach", e);
+  }
+  return c.json({ id: res.meta.last_row_id, coach }, 201);
 });
 
 workout.put("/:id", async (c) => {
@@ -146,9 +171,16 @@ workout.put("/:id", async (c) => {
 });
 
 workout.delete("/:id", async (c) => {
-  await c.env.DB.prepare("DELETE FROM workout_entries WHERE id = ? AND user_id = ?")
-    .bind(c.req.param("id"), c.get("userId"))
-    .run();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM workout_entries WHERE id = ? AND user_id = ?").bind(
+      c.req.param("id"),
+      c.get("userId")
+    ),
+    c.env.DB.prepare("DELETE FROM coach_feedback WHERE user_id = ? AND kind = 'workout' AND record_id = ?").bind(
+      c.get("userId"),
+      c.req.param("id")
+    ),
+  ]);
   return c.json({ ok: true });
 });
 

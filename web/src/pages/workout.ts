@@ -1,6 +1,7 @@
-import { api, ApiError, type Exercise, type WorkoutEntry } from "../api";
+import { api, ApiError, type CoachFeedback, type Exercise, type WorkoutEntry } from "../api";
 import { h, toast, todayStr, fmt } from "../ui";
 import { lineChart } from "../chart";
+import { showCoach } from "../coach";
 
 export function renderWorkout(page: HTMLElement) {
   let date = todayStr();
@@ -89,7 +90,7 @@ export function renderWorkout(page: HTMLElement) {
     const sets = Number(setsInput.value);
     if (!exSelect.value || !(weight_kg >= 0) || !reps || !sets) return toast("請填動作、重量、次數、組數");
     try {
-      await api.post("/api/workouts", {
+      const res = await api.post<{ id: number; coach: CoachFeedback }>(`/api/workouts?today=${todayStr()}`, {
         date,
         exercise_id: Number(exSelect.value),
         weight_kg,
@@ -98,6 +99,7 @@ export function renderWorkout(page: HTMLElement) {
         note: noteInput.value.trim() || null,
       });
       toast("已記錄");
+      showCoach(coachBox, res.coach, "workout", res.id);
       noteInput.value = "";
       void refreshList();
       void refreshProgression();
@@ -106,6 +108,7 @@ export function renderWorkout(page: HTMLElement) {
     }
   }
 
+  const coachBox = h("div");
   const listBox = h("div", { class: "card" });
   async function refreshList() {
     listBox.replaceChildren(h("div", { class: "eyebrow" }, "當日訓練"), h("div", { class: "empty" }, "載入中…"));
@@ -190,6 +193,7 @@ export function renderWorkout(page: HTMLElement) {
       h("button", { class: "btn primary", style: "width:100%", onclick: () => void saveEntry() }, "新增紀錄"),
       progBox
     ),
+    coachBox,
     listBox
   );
 

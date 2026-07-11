@@ -42,6 +42,7 @@ export const api = {
   upload: <T>(path: string, form: FormData) => request<T>(path, { method: "POST", body: form }),
 };
 
+export type CoachFeedback = { message: string; notable: boolean; event: string | null } | null;
 export type FoodItem = { name: string; qty: string; protein_g: number; kcal: number };
 export type FoodLog = {
   id: number;

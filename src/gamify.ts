@@ -67,7 +67,7 @@ export type Raw = {
   inbodyDates: string[];
 };
 
-async function loadRaw(db: D1Database, userId: number): Promise<Raw> {
+export async function loadRaw(db: D1Database, userId: number): Promise<Raw> {
   const [foodDays, workoutDates, inbodyDates] = await Promise.all([
     db
       .prepare("SELECT date, SUM(protein_g) AS protein FROM food_logs WHERE user_id = ? GROUP BY date")

@@ -28,11 +28,15 @@ export function resolveProvider(env: Env): Provider | null {
   return null;
 }
 
-type ContentPart =
+export type ContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
-async function chatJson<T>(env: Env, content: ContentPart[]): Promise<T> {
+export async function chatJson<T>(
+  env: Env,
+  content: ContentPart[],
+  opts?: { system?: string; maxTokens?: number; temperature?: number }
+): Promise<T> {
   const provider = resolveProvider(env);
   if (!provider) {
     throw new AiError("未設定 AI API key（MISTRAL_API_KEY 或 OPENROUTER_API_KEY），請改用手動輸入", 503);
@@ -46,9 +50,13 @@ async function chatJson<T>(env: Env, content: ContentPart[]): Promise<T> {
     },
     body: JSON.stringify({
       model: provider.model,
-      messages: [{ role: "user", content }],
+      messages: [
+        ...(opts?.system ? [{ role: "system", content: opts.system }] : []),
+        { role: "user", content },
+      ],
       response_format: { type: "json_object" },
-      temperature: 0.2,
+      temperature: opts?.temperature ?? 0.2,
+      ...(opts?.maxTokens ? { max_tokens: opts.maxTokens } : {}),
     }),
   });
   if (!res.ok) {

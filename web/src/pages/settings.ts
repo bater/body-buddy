@@ -234,6 +234,32 @@ export function renderSettings(page: HTMLElement) {
         )
       ),
       reminderCard(settings),
+      (() => {
+        const box = h("input", {
+          type: "checkbox",
+          onchange: async () => {
+            try {
+              await api.put("/api/settings", { coach_enabled: box.checked ? "1" : "0" });
+              toast(`AI 教練${box.checked ? "已開啟" : "已關閉"}`);
+            } catch {
+              toast("儲存失敗");
+              box.checked = !box.checked;
+            }
+          },
+        });
+        box.checked = settings.coach_enabled !== "0";
+        return h(
+          "div",
+          { class: "card" },
+          h("div", { class: "eyebrow" }, "AI 教練"),
+          h(
+            "label",
+            { class: "small", style: "display:flex;align-items:center;gap:8px" },
+            box,
+            "新增紀錄後給回饋（達標、破紀錄等重要時刻才呼叫 AI）"
+          )
+        );
+      })(),
       h(
         "div",
         { class: "card" },

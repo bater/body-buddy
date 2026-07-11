@@ -1,6 +1,7 @@
-import { api, ApiError, type InBodyRecord } from "../api";
+import { api, ApiError, type CoachFeedback, type InBodyRecord } from "../api";
 import { h, toast, todayStr, fmt } from "../ui";
 import { lineChart } from "../chart";
+import { showCoach } from "../coach";
 
 type Extraction = Partial<Record<string, number | string | null>>;
 
@@ -17,6 +18,7 @@ const FORM_FIELDS: { key: string; label: string; step: string }[] = [
 export function renderInBody(page: HTMLElement) {
   const trendBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
   const formBox = h("div");
+  const coachBox = h("div");
   const tableBox = h("div", { class: "card" });
 
   const fileInput = h("input", {
@@ -99,7 +101,7 @@ export function renderInBody(page: HTMLElement) {
                 };
                 if (val("weight_kg") == null) return toast("體重為必填");
                 try {
-                  await api.post("/api/inbody", {
+                  const res = await api.post<{ id: number; coach: CoachFeedback }>(`/api/inbody?today=${todayStr()}`, {
                     date: dateInput.value,
                     weight_kg: val("weight_kg"),
                     skeletal_muscle_mass_kg: val("skeletal_muscle_mass_kg"),
@@ -113,6 +115,7 @@ export function renderInBody(page: HTMLElement) {
                     raw_json: source === "photo" ? extraction : null,
                   });
                   toast("已儲存");
+                  showCoach(coachBox, res.coach, "inbody", res.id);
                   formBox.replaceChildren();
                   void refresh();
                 } catch (e) {
@@ -232,6 +235,7 @@ export function renderInBody(page: HTMLElement) {
       fileInput
     ),
     formBox,
+    coachBox,
     tableBox
   );
 
