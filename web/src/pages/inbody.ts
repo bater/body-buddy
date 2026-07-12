@@ -1,5 +1,5 @@
 import { api, ApiError, type CoachFeedback, type InBodyRecord } from "../api";
-import { h, toast, todayStr, fmt } from "../ui";
+import { h, cardLink, toast, todayStr, fmt } from "../ui";
 import { lineChart } from "../chart";
 import { showCoach } from "../coach";
 
@@ -19,7 +19,7 @@ export function renderInBody(page: HTMLElement) {
   const trendBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
   const formBox = h("div");
   const coachBox = h("div");
-  const tableBox = h("div", { class: "card" });
+  const tableBox = h("div", { style: "display:flex;flex-direction:column;gap:12px" });
   let historyOpen = false;
 
   const fileInput = h("input", {
@@ -161,7 +161,7 @@ export function renderInBody(page: HTMLElement) {
     const srcLabel = { photo: "照片", manual: "手動", import: "匯入" } as const;
     const listWrap = h(
       "div",
-      { style: historyOpen ? "" : "display:none" },
+      { class: "card", style: historyOpen ? "" : "display:none" },
       records.length === 0
         ? h("div", { class: "empty" }, "還沒有 InBody 紀錄")
         : h(
@@ -225,27 +225,30 @@ export function renderInBody(page: HTMLElement) {
           )
           )
     );
-    const arrow = h("span", { style: "font-size:11px" }, historyOpen ? "▲" : "▼");
-    tableBox.replaceChildren(
-      h(
-        "div",
-        {
-          class: "eyebrow",
-          style: "cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none",
-          role: "button",
-          "aria-expanded": String(historyOpen),
-          onclick: (e: Event) => {
-            historyOpen = !historyOpen;
-            listWrap.style.display = historyOpen ? "" : "none";
-            arrow.textContent = historyOpen ? "▲" : "▼";
-            (e.currentTarget as HTMLElement).setAttribute("aria-expanded", String(historyOpen));
-          },
-        },
-        h("span", {}, `歷史紀錄（${records.length}）`),
-        arrow
-      ),
-      listWrap
-    );
+    // Same card-link primitive as the settings nav rows, but toggling the
+    // history table in place (▼/▲) instead of navigating.
+    const header = cardLink(`📋 歷史紀錄（${records.length}）`, {
+      trailing: historyOpen ? "▲" : "▼",
+    });
+    const arrow = header.querySelector<HTMLElement>(".card-link-arrow")!;
+    arrow.style.fontSize = "11px";
+    const toggle = () => {
+      historyOpen = !historyOpen;
+      listWrap.style.display = historyOpen ? "" : "none";
+      arrow.textContent = historyOpen ? "▲" : "▼";
+      header.setAttribute("aria-expanded", String(historyOpen));
+    };
+    header.setAttribute("role", "button");
+    header.setAttribute("tabindex", "0");
+    header.setAttribute("aria-expanded", String(historyOpen));
+    header.addEventListener("click", toggle);
+    header.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggle();
+      }
+    });
+    tableBox.replaceChildren(header, listWrap);
   }
 
   page.replaceChildren(

@@ -124,6 +124,21 @@ main > *, .card, .field-grid > *, .btn-row > * { min-width: 0; }
 }
 .card.coach { border-left: 3px solid var(--accent); }
 
+/* card-link: the app's standard tappable card row. Navigates (trailing "→")
+   or toggles a section (trailing ▼/▲). Accent + semibold, emoji lead, arrow
+   pinned right. Compose with `.card`; build via ui.ts cardLink(). */
+.card-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.card-link .card-link-arrow { margin-left: auto; }
+
 /* last-workout summary + escalating idle nudge, merged into one block */
 .rest-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .rest-when { font-size: 16px; font-weight: 600; }

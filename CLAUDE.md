@@ -71,6 +71,17 @@ if the feature is user-visible.
 - **Frontend**: no framework — `h()` helper (`web/src/ui.ts`), hash routing in
   `web/src/main.ts`, one file per page in `web/src/pages/`. Charts are the
   hand-rolled SVG `lineChart` in `web/src/chart.ts`.
+- **UI system — reuse the shared primitives, don't hand-roll**: cards are
+  `.card`; section labels are `.eyebrow` (small grey uppercase). For any
+  tappable card row that navigates to another page OR toggles a section open,
+  use `cardLink(label, {href})` / `cardLink(label, {onclick, trailing})` from
+  `web/src/ui.ts` (renders `.card.card-link` — accent + semibold, emoji lead,
+  arrow pinned right: "→" for nav, "▼/▲" for a toggle). This is the canonical
+  "go / reveal" affordance (settings 管理後台 & 加入主畫面, InBody 歷史紀錄).
+  Colors come from CSS vars in `web/src/style.css` (`--accent`, `--ink`/`-2`/
+  `-3`, `--line`, `--data`) — never hard-code hex; both light & dark are
+  defined there. Prefer a class in `style.css` over per-element inline `style`
+  when a pattern repeats.
 
 ## Verification pattern
 

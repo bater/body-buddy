@@ -25,6 +25,25 @@ export function h<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
+// Standard tappable card row (accent + semibold, emoji lead, arrow pinned
+// right). Pass `href` for a nav link (<a>, default trailing "→"); pass
+// `onclick` for an in-place action/section toggle (<div>, e.g. trailing "▼").
+// The rendered `.card-link-arrow` span can be grabbed to flip a toggle arrow.
+export function cardLink(
+  label: string,
+  opts: { href?: string; onclick?: (e: Event) => void; trailing?: string } = {}
+): HTMLElement {
+  const attrs: Record<string, unknown> = { class: "card card-link" };
+  if (opts.href) attrs.href = opts.href;
+  if (opts.onclick) attrs.onclick = opts.onclick;
+  return h(
+    opts.href ? "a" : "div",
+    attrs,
+    h("span", {}, label),
+    h("span", { class: "card-link-arrow" }, opts.trailing ?? "→")
+  );
+}
+
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 export function toast(msg: string) {
   let t = document.getElementById("toast");

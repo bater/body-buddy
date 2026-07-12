@@ -1,5 +1,5 @@
 import { api, ApiError, type Gamify, type InBodyRecord, type JourneyEntry } from "../api";
-import { h, toast, fmt, fmtDateShort, todayStr } from "../ui";
+import { h, cardLink, toast, fmt, fmtDateShort, todayStr } from "../ui";
 import { levelTitle } from "../gamify";
 import { APP_VERSION } from "../version";
 
@@ -328,28 +328,8 @@ export function renderSettings(page: HTMLElement) {
               )
             )
       ),
-      ...(me.is_admin
-        ? [
-            h(
-              "a",
-              {
-                href: "#/admin",
-                class: "card",
-                style: "display:block;text-decoration:none;color:var(--accent);font-weight:600",
-              },
-              "🔧 管理後台 →"
-            ),
-          ]
-        : []),
-      h(
-        "a",
-        {
-          href: "#/help",
-          class: "card",
-          style: "display:block;text-decoration:none;color:var(--accent);font-weight:600",
-        },
-        "📲 加入主畫面（安裝到 iPhone）→"
-      ),
+      ...(me.is_admin ? [cardLink("🔧 管理後台", { href: "#/admin" })] : []),
+      cardLink("📲 加入主畫面（安裝到 iPhone）", { href: "#/help" }),
       h(
         "a",
         {
