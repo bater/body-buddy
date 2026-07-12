@@ -344,6 +344,15 @@ export function renderSettings(page: HTMLElement) {
       h(
         "a",
         {
+          href: "#/help",
+          class: "card",
+          style: "display:block;text-decoration:none;color:var(--accent);font-weight:600",
+        },
+        "📲 加入主畫面（安裝到 iPhone）→"
+      ),
+      h(
+        "a",
+        {
           href: "#/about",
           class: "muted small",
           style: "display:block;text-align:center;text-decoration:none;padding:8px",

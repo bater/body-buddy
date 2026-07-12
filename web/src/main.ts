@@ -9,6 +9,7 @@ import { renderExercises } from "./pages/exercises";
 import { renderExerciseDetail } from "./pages/exercise-detail";
 import { renderSettings } from "./pages/settings";
 import { renderAbout } from "./pages/about";
+import { renderHelp } from "./pages/help";
 import { renderAdmin } from "./pages/admin";
 
 const routes: Record<string, (page: HTMLElement) => void> = {
@@ -20,6 +21,7 @@ const routes: Record<string, (page: HTMLElement) => void> = {
   exercise: renderExerciseDetail,
   settings: renderSettings,
   about: renderAbout,
+  help: renderHelp,
   admin: renderAdmin,
 };
 
@@ -37,7 +39,7 @@ function render() {
   const tabRoute =
     route === "exercises" || route === "exercise"
       ? "workout"
-      : route === "about"
+      : route === "about" || route === "help"
         ? "settings"
         : route in routes
           ? route
